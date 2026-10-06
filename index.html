@@ -7,6 +7,35 @@
   <title>PSU-MG — Revisão de Provas</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%238f1720'/%3E%3Ctext x='19' y='46' font-size='42' fill='white'%3EP%3C/text%3E%3C/svg%3E">
 
+  <script>
+// MODO DONO · TESTE (PSU-MG): carregado ANTES de qualquer outro script.
+// Com o modo ligado, toda gravação no localStorage vai para a memória da página e some ao sair ou
+// recarregar; o progresso de verdade fica intocado. "zero" = finge uma plataforma sem nenhum progresso.
+// Imagens coladas no "Meu raciocínio" (IndexedDB) também não são gravadas no modo teste.
+(function () {
+  var FLAG = 'psu.modoTeste', modo = null;
+  try { modo = window.localStorage.getItem(FLAG); } catch (e) { return; }
+  window.PSU_MODO_TESTE = modo === '1' || modo === 'zero' ? modo : null;
+  if (!window.PSU_MODO_TESTE) return;
+  var real = window.localStorage, mem = new Map(), apagadas = new Set(), zero = modo === 'zero';
+  var P = Storage.prototype, g = P.getItem, s = P.setItem, r = P.removeItem, c = P.clear;
+  var meu = function (st, k) { return st === real && String(k) !== FLAG; };
+  P.getItem = function (k) {
+    if (!meu(this, k)) return g.call(this, k);
+    k = String(k);
+    if (mem.has(k)) return mem.get(k);
+    if (zero || apagadas.has(k)) return null;
+    return g.call(this, k);
+  };
+  P.setItem = function (k, v) { if (!meu(this, k)) return s.call(this, k, v); k = String(k); mem.set(k, String(v)); apagadas.delete(k); };
+  P.removeItem = function (k) { if (!meu(this, k)) return r.call(this, k); k = String(k); mem.delete(k); apagadas.add(k); };
+  P.clear = function () { if (this !== real) return c.call(this); mem.clear(); zero = true; };
+  if (window.IDBObjectStore) ['put', 'add', 'delete', 'clear'].forEach(function (m) {
+    if (IDBObjectStore.prototype[m]) IDBObjectStore.prototype[m] = function () { return {}; };
+  });
+})();
+
+</script>
   <style>
 :root {
   color-scheme: light;
@@ -2786,6 +2815,76 @@ html.fc-zoom-aberto, html.fc-zoom-aberto body {overflow:hidden}
 .psu-ass-q{padding:5px 9px;border:1px solid var(--linha);border-radius:999px;background:transparent;color:inherit;font-size:12px;font-variant-numeric:tabular-nums;cursor:pointer}
 .psu-ass-q.certa{border-color:var(--verde);color:var(--verde)}
 .psu-ass-q.errada{border-color:var(--vermelho);color:var(--vermelho)}
+/* PSU-MG: MODO DONO · TESTE */
+[data-modulo='preferencias']{position:relative}
+.mt-botao.ativo{border-color:#b58124;background:#fff3d6}
+.mt-painel{position:absolute;top:calc(100% + 8px);right:0;z-index:40;width:min(320px,calc(100vw - 24px));padding:16px;border:1px solid var(--linha);border-radius:12px;background:var(--papel,#fff);color:inherit;box-shadow:0 12px 32px rgb(0 0 0 / 18%)}
+.mt-painel p{margin:8px 0 12px;font-size:14px;line-height:1.45;color:var(--fraco)}
+.mt-painel button{display:block;width:100%;margin-top:8px;padding:10px 12px;border:1px solid var(--linha);border-radius:8px;background:transparent;color:inherit;font-weight:600;text-align:left;cursor:pointer}
+.mt-painel .mt-principal{border-color:var(--vinho);background:var(--vinho);color:#fff}
+.mt-faixa{position:sticky;top:84px;z-index:19;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px 10px;padding:8px 16px;background:#fff3d6;color:#5c4100;font-size:13px;border-bottom:1px solid #e8c877}
+.mt-faixa button{padding:4px 12px;border:1px solid #b58124;border-radius:999px;background:#fff;color:#5c4100;font-weight:700;cursor:pointer}
+:root[data-tema="escuro"] .mt-faixa{background:#3a2c08;color:#ffe3a3;border-color:#6b5414}
+:root[data-tema="escuro"] .mt-faixa button{background:transparent;color:#ffe3a3}
+@media (max-width:760px){.mt-faixa{top:0}}
+/* PSU-MG: FLASHCARDS */
+.fcp-topo{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:16px 0}
+.fcp-topo .fcp-dica{flex-basis:100%;margin:0}
+.fcp-dica{font-size:13px;color:var(--fraco);line-height:1.45}
+.fcp-filtros{margin:16px 0}
+.fcp-filtros h2{margin:0 0 12px;font-size:18px}
+.fcp-atalhos,.fcp-grupo{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.fcp-grupo>span{flex-basis:100%;font-size:12px;font-weight:700;color:var(--fraco);text-transform:uppercase;letter-spacing:.04em}
+.fcp-chip{padding:6px 11px;border:1px solid var(--linha);border-radius:999px;background:transparent;color:inherit;font-size:13px;cursor:pointer}
+.fcp-chip.ativo{border-color:var(--vinho);background:var(--vinho);color:#fff}
+.fcp-busca,.fcp-linha label{display:flex;flex-direction:column;gap:4px;font-size:13px;font-weight:600}
+.fcp-busca{margin:0 0 12px}
+.fcp-busca input,.fcp-linha select{padding:9px 10px;border:1px solid var(--linha);border-radius:8px;background:transparent;color:inherit;font:inherit;font-weight:400}
+.fcp-linha{display:flex;flex-wrap:wrap;gap:10px;align-items:flex-end;margin:0 0 12px}
+.fcp-linha label{flex:1;min-width:150px}
+.fcp-int{margin-top:8px;font-size:13px}
+.fcp-int label{display:block;margin:8px 0;line-height:1.45}
+.fcp-lista{display:grid;gap:10px;margin:16px 0 32px}
+.fcp-card,.fcp-cartao{padding:14px 16px;border:1px solid var(--linha);border-radius:12px;background:var(--cartao,transparent)}
+.fcp-card-meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--fraco)}
+.fcp-card-frente{font-weight:600}
+.fcp-card-frente p,.fcp-card-verso p{margin:.5em 0}
+.fcp-card-rodape{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:6px;margin-top:6px}
+.fcp-card-rodape small{color:var(--fraco)}
+.fcp-nota{padding:1px 8px;border-radius:999px;border:1px solid var(--linha);font-weight:700}
+.fcp-n-errei{color:var(--vermelho);border-color:var(--vermelho)}
+.fcp-n-dificil{color:#b5651d;border-color:#d9a066}
+.fcp-n-regular{color:#8a6d00;border-color:#d6bf5c}
+.fcp-n-medio{color:var(--verde);border-color:var(--verde)}
+.fcp-n-facil{color:#2f6db5;border-color:#7fa6d6}
+.fcp-estudo{max-width:720px;margin:0 auto 32px}
+.fcp-estudo-topo{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:12px 0 8px;font-size:13px;color:var(--fraco)}
+.fcp-cartao{margin:14px 0;font-size:17px;line-height:1.55}
+.fcp-cartao hr{border:0;border-top:1px dashed var(--linha);margin:14px 0}
+.fcp-verso{color:inherit}
+.fcp-virar{width:100%;padding:14px}
+.fcp-notas{display:grid;grid-template-columns:repeat(5,1fr);gap:6px}
+.fcp-nota-b{display:flex;flex-direction:column;align-items:center;gap:2px;padding:10px 4px;border:1px solid currentColor;border-radius:10px;background:transparent;cursor:pointer;font-size:14px}
+.fcp-nota-b small{font-size:11px;opacity:.8}
+@media (max-width:420px){.fcp-notas{grid-template-columns:repeat(3,1fr)}}
+.fcp-estudo-rodape{margin-top:12px}
+.fcp-fundo{position:fixed;inset:0;z-index:60;display:flex;align-items:flex-end;justify-content:center;padding:12px;padding-bottom:max(12px,env(safe-area-inset-bottom,0px));background:rgb(0 0 0 / 45%)}
+@media (min-width:640px){.fcp-fundo{align-items:center}}
+.fcp-modal{width:min(560px,100%);max-height:calc(100% - 24px);overflow:auto;padding:18px;border-radius:14px;background:var(--papel,#fff);color:inherit;box-shadow:0 18px 50px rgb(0 0 0 / 30%)}
+:root[data-tema="escuro"] .fcp-modal{background:#16191e}
+.fcp-modal h2{margin:0 0 4px;font-size:20px}
+.fcp-ref{margin:0 0 10px;font-size:13px;color:var(--fraco)}
+.fcp-modal label{display:flex;flex-direction:column;gap:4px;margin:10px 0;font-size:13px;font-weight:600}
+.fcp-modal textarea,.fcp-modal select{padding:10px;border:1px solid var(--linha);border-radius:8px;background:transparent;color:inherit;font:inherit;font-size:15px;font-weight:400;resize:vertical}
+.fcp-sel{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:10px;border-radius:8px;background:color-mix(in srgb,var(--vinho) 8%,transparent);font-size:13px}
+.fcp-sel q{flex-basis:100%;font-style:italic}
+.fcp-sel button,.fcp-acoes button,.fcp-irmaos button{padding:8px 12px;border:1px solid var(--linha);border-radius:8px;background:transparent;color:inherit;font-weight:600;cursor:pointer}
+.fcp-irmaos ul{margin:8px 0;padding-left:18px}
+.fcp-irmaos button{border:0;padding:4px 0;text-align:left;text-decoration:underline}
+.fcp-acoes{display:flex;gap:8px;align-items:center;margin-top:14px}
+.fcp-acoes span{flex:1}
+.fcp-acoes .fcp-principal{border-color:var(--vinho);background:var(--vinho);color:#fff}
+.fcp-acoes .fcp-perigo{color:var(--vermelho);border-color:var(--vermelho)}
 
 </style>
 <style>
@@ -2817,6 +2916,7 @@ window.__PSU_DADOS = {"/banco.json":{"versao":1,"fontes":[{"arquivo":"PSU-MG-202
       <a class="nav-link nav-banco" href="#por-area">BANCO DE QUESTÕES</a>
       <a class="nav-link nav-provas" href="#provas">PROVAS POR ANO</a>
       <a class="nav-link nav-erros" href="#erros">CADERNO DE ERROS</a>
+      <a class="nav-link nav-flashcards" href="#flashcards">FLASHCARDS</a>
       <a class="nav-link nav-simulado" href="#simulado">SIMULADO</a>
       <a class="nav-link nav-desempenho" href="#desempenho">DESEMPENHO</a>
     </nav>
@@ -6264,6 +6364,49 @@ if(__exports != exports)module.exports = exports;return module.exports}));
   <script>
 (() => {
   'use strict';
+  // Botão 🧪 no topo + faixa de aviso. Ligar/desligar grava só a chave psu.modoTeste e recarrega.
+  const FLAG = 'psu.modoTeste', modo = window.PSU_MODO_TESTE;
+  const definir = v => { try { if (v) localStorage.setItem(FLAG, v); else localStorage.removeItem(FLAG); } catch (e) {} location.reload(); };
+  function montar() {
+    const casa = document.querySelector("[data-modulo='preferencias']");
+    if (!casa || casa.querySelector('.mt-botao')) return;
+    const botao = document.createElement('button');
+    botao.type = 'button'; botao.className = 'fg-pref-botao mt-botao' + (modo ? ' ativo' : '');
+    botao.textContent = '🧪'; botao.title = 'Modo dono · teste'; botao.setAttribute('aria-label', 'Modo dono: testar sem salvar progresso');
+    botao.setAttribute('aria-expanded', 'false');
+    const painel = document.createElement('div');
+    painel.className = 'mt-painel'; painel.hidden = true; painel.setAttribute('role', 'dialog'); painel.setAttribute('aria-label', 'Modo dono');
+    painel.innerHTML = modo
+      ? "<strong>Modo teste ligado</strong><p>Nada do que você fizer agora fica salvo. Ao sair, a plataforma volta exatamente como estava.</p>" +
+        "<button type='button' class='mt-principal' data-mt='sair'>Sair do modo teste</button>" +
+        (modo === '1' ? "<button type='button' data-mt='zero'>Recomeçar o teste do zero</button>" : "<button type='button' data-mt='1'>Testar com o meu progresso</button>")
+      : "<strong>Modo dono · teste</strong><p>Mexa e teste tudo à vontade: responder, marcar temas, grifar, finalizar provas. Nada fica salvo, e ao sair a plataforma volta exatamente como está agora.</p>" +
+        "<button type='button' class='mt-principal' data-mt='1'>Testar com o meu progresso</button>" +
+        "<button type='button' data-mt='zero'>Testar como usuário novo (do zero)</button>";
+    painel.addEventListener('click', e => {
+      const b = e.target.closest('[data-mt]'); if (!b) return;
+      definir(b.dataset.mt === 'sair' ? null : b.dataset.mt);
+    });
+    botao.addEventListener('click', () => { painel.hidden = !painel.hidden; botao.setAttribute('aria-expanded', String(!painel.hidden)); });
+    document.addEventListener('pointerdown', e => { if (!painel.hidden && !painel.contains(e.target) && e.target !== botao) { painel.hidden = true; botao.setAttribute('aria-expanded', 'false'); } });
+    casa.prepend(botao, painel);
+    if (modo) {
+      document.documentElement.classList.add('modo-teste');
+      const faixa = document.createElement('div');
+      faixa.className = 'mt-faixa'; faixa.setAttribute('role', 'status');
+      faixa.innerHTML = "🧪 <strong>MODO TESTE</strong> · " + (modo === 'zero' ? 'como usuário novo' : 'com o seu progresso') + " · nada é salvo <button type='button' data-mt-sair>Sair</button>";
+      faixa.querySelector('[data-mt-sair]').addEventListener('click', () => definir(null));
+      document.querySelector('header.topo')?.after(faixa);
+    }
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', () => setTimeout(montar, 0));
+  else setTimeout(montar, 0);
+})();
+
+</script>
+  <script>
+(() => {
+  'use strict';
   // BANCO DE QUESTÕES (PSU-MG): filtra por grande área e por ano. Cada recorte é uma lista comum
   // (treinar, fazer prova, passar o olho, só erros), criada uma vez no carregamento.
   const AREAS = {todas:'Todas as grandes áreas', clinica:'Clínica Médica', cirurgia:'Cirurgia', pediatria:'Pediatria', go:'Ginecologia e Obstetrícia', preventiva:'Preventiva'};
@@ -7073,6 +7216,257 @@ if(__exports != exports)module.exports = exports;return module.exports}));
 </script>
   <script>
 (() => {
+  'use strict';
+  // FLASHCARDS (PSU-MG). Cartões criados por você a partir das questões (botão ⚡ na questão) ou avulsos.
+  // Ficam em dados.cartoesPsu (entram no Exportar/Importar progresso e respeitam o modo teste).
+  // 5 notas como na plataforma original: Errei · Difícil · Médio · Bom · Fácil.
+  // Intervalos: "espaçado" (padrão, cresce a cada acerto) ou "intensivo" (véspera de prova: 15 min, 30 min, 1 h, 2 h, 3 h).
+  const CAMPO = 'cartoesPsu', PREF_FILTRO = 'fcFiltro', PREF_MODO = 'fcModo';
+  const MIN = 60e3, H = 60 * MIN, D = 24 * H;
+  const AREAS = [['clinica', 'Clínica Médica'], ['cirurgia', 'Cirurgia'], ['go', 'Ginecologia e Obstetrícia'], ['pediatria', 'Pediatria'], ['preventiva', 'Preventiva'], ['outra', 'Sem área']];
+  const AREA_DA_QUESTAO = {'Clínica Médica': 'clinica', 'Cirurgia': 'cirurgia', 'Ginecologia e Obstetrícia': 'go', 'Pediatria': 'pediatria', 'Preventiva': 'preventiva'};
+  const NOTAS = [['errei', 'Errei', '1'], ['dificil', 'Difícil', '2'], ['regular', 'Médio', '3'], ['medio', 'Bom', '4'], ['facil', 'Fácil', '5']];
+  const NOME_NOTA = Object.fromEntries(NOTAS.map(n => [n[0], n[1]]));
+  const FILTRO_NOTAS = [['nunca', 'Nunca vistos'], ...NOTAS.map(n => [n[0], n[1]])];
+  const ORDENS = [['novos', 'Novos primeiro, depois os que mais errou'], ['area', 'Área (CM > Cir > GO > Ped > Prev)'], ['erros', 'Mais errados primeiro'], ['recentes', 'Criados mais recentemente'], ['aleatoria', 'Aleatória']];
+  const vazio = () => ({q: '', areas: [], notas: [], origem: '', vencidos: false, ordem: 'novos'});
+  const semAcento = t => String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const novoId = () => 'fc-' + Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 7);
+  let apiAtual = null, sessao = null, ultimaSelecao = '';
+
+  const mapa = api => Object.values(api.lerTudo?.(CAMPO) || {}).filter(c => c && c.id && !c.excluido);
+  function gravar(api, c) { c.editado = Date.now(); api.gravar(CAMPO, c.id, c); }
+  function excluir(api, id) { api.gravar(CAMPO, id, null); }
+  const modoIntensivo = api => api.preferencia(PREF_MODO) === 'intensivo';
+  // Próximo intervalo para cada nota.
+  function intervalo(api, c, nota) {
+    if (modoIntensivo(api)) return {errei: 15 * MIN, dificil: 30 * MIN, regular: H, medio: 2 * H, facil: 3 * H}[nota];
+    const ivl = c.rev?.ivl || 0, fator = {dificil: 1.2, regular: 1.8, medio: 2.5, facil: 3.5}[nota];
+    if (nota === 'errei') return 10 * MIN;
+    const base = {dificil: D, regular: 2 * D, medio: 3 * D, facil: 5 * D}[nota];
+    return Math.round(Math.max(base, ivl >= D ? ivl * fator : 0));
+  }
+  const texto = ms => ms < H ? Math.round(ms / MIN) + ' min' : ms < D ? Math.round(ms / H) + ' h' : Math.round(ms / D) + (Math.round(ms / D) === 1 ? ' dia' : ' dias');
+  function avaliar(api, c, nota) {
+    const agora = Date.now(), ivl = intervalo(api, c, nota), r = c.rev || {n: 0, erros: 0, hist: []};
+    r.n = (r.n || 0) + 1; if (nota === 'errei') r.erros = (r.erros || 0) + 1;
+    r.nota = nota; r.quando = agora; r.ivl = nota === 'errei' ? 0 : ivl; r.prox = agora + ivl;
+    r.hist = [...(r.hist || []), [agora, nota]].slice(-30);
+    c.rev = r; gravar(api, c);
+  }
+  const vencido = (c, agora = Date.now()) => !c.rev || (c.rev.prox || 0) <= agora;
+  function filtrar(api, f, cards) {
+    const agora = Date.now(), q = semAcento(f.q);
+    return cards.filter(c => {
+      if (f.areas.length && !f.areas.includes(c.area || 'outra')) return false;
+      if (f.notas.length && !f.notas.includes(c.rev ? c.rev.nota : 'nunca')) return false;
+      if (f.origem === 'questao' && !c.qid) return false;
+      if (f.origem === 'avulso' && c.qid) return false;
+      if (f.vencidos && !vencido(c, agora)) return false;
+      if (q && !semAcento(c.frente + ' ' + c.verso + ' ' + (c.ref || '')).includes(q)) return false;
+      return true;
+    });
+  }
+  const PESO_NOTA = {errei: 0, dificil: 1, regular: 2, medio: 3, facil: 4};
+  const ORDEM_AREA = Object.fromEntries(AREAS.map((a, i) => [a[0], i]));
+  function ordenar(cards, ordem) {
+    const a = [...cards];
+    if (ordem === 'aleatoria') { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; }
+    if (ordem === 'area') return a.sort((x, y) => ORDEM_AREA[x.area || 'outra'] - ORDEM_AREA[y.area || 'outra'] || x.criado - y.criado);
+    if (ordem === 'erros') return a.sort((x, y) => (y.rev?.erros || 0) - (x.rev?.erros || 0) || (PESO_NOTA[x.rev?.nota] ?? -1) - (PESO_NOTA[y.rev?.nota] ?? -1));
+    if (ordem === 'recentes') return a.sort((x, y) => y.criado - x.criado);
+    // novos: nunca vistos primeiro; depois vencidos por gravidade (Errei > Difícil > Médio...), depois o resto pela próxima revisão.
+    const agora = Date.now();
+    const chave = c => !c.rev ? [0, c.criado] : vencido(c, agora) ? [1, PESO_NOTA[c.rev.nota] ?? 9, c.rev.prox] : [2, c.rev.prox];
+    return a.sort((x, y) => { const p = chave(x), q = chave(y); for (let i = 0; i < Math.max(p.length, q.length); i++) if ((p[i] ?? 0) !== (q[i] ?? 0)) return (p[i] ?? 0) - (q[i] ?? 0); return 0; });
+  }
+  const contar = qid => apiAtual ? mapa(apiAtual).filter(c => c.qid === qid).length : 0;
+  function lerFiltro(api) { const f = api.preferencia(PREF_FILTRO); return {...vazio(), ...(f && typeof f === 'object' ? f : {})}; }
+
+  // ---------- EDITOR (modal) ----------
+  function abrirEditor(api, {qid = null, id = null, depois = null} = {}) {
+    apiAtual = api;
+    const esc = api.esc;
+    const existente = id ? api.ler(CAMPO, id) : null;
+    const q = (existente?.qid || qid) ? api.questao(existente?.qid || qid) : null;
+    const correta = q && q.gabarito !== 'anulada' ? q.alternativas.find(a => a.letra === q.gabarito) : null;
+    const c = existente ? {...existente} : {id: novoId(), qid: q?.id || null, area: q ? (AREA_DA_QUESTAO[q.areaOriginal] || 'outra') : 'outra',
+      ref: q ? 'PSU-MG ' + q.ano + ' · Q' + q.numero : '', frente: '', verso: correta ? '**' + q.gabarito + ')** ' + correta.textoMd : '', criado: Date.now()};
+    const irmaos = q ? mapa(api).filter(x => x.qid === q.id && x.id !== c.id) : [];
+    fechar();
+    const fundo = document.createElement('div');
+    fundo.className = 'fcp-fundo';
+    fundo.innerHTML = "<div class='fcp-modal' role='dialog' aria-modal='true' aria-labelledby='fcp-tit'>" +
+      "<h2 id='fcp-tit'>" + (existente ? 'Editar flashcard' : 'Novo flashcard') + '</h2>' +
+      (c.ref ? "<p class='fcp-ref'>" + esc(c.ref) + (q ? ' · ' + esc(q.areaOriginal) : '') + '</p>' : '') +
+      (ultimaSelecao ? "<div class='fcp-sel'><span>Trecho selecionado:</span><q>" + esc(ultimaSelecao.slice(0, 160)) + (ultimaSelecao.length > 160 ? '…' : '') + "</q><button type='button' data-fcp='sel-frente'>Usar na frente</button><button type='button' data-fcp='sel-verso'>Usar no verso</button></div>" : '') +
+      "<label>Frente (pergunta)<textarea data-campo='frente' rows='4' placeholder='Ex.: Qual a conduta inicial na…?'>" + esc(c.frente) + '</textarea></label>' +
+      "<label>Verso (resposta)<textarea data-campo='verso' rows='5' placeholder='Resposta curta, do jeito que você quer lembrar na prova.'>" + esc(c.verso) + '</textarea></label>' +
+      "<label>Grande área<select data-campo='area'>" + AREAS.map(([k, n]) => "<option value='" + k + "'" + (k === c.area ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label>' +
+      "<p class='fcp-dica'>Aceita **negrito** e listas com “- ”. Dica: selecione um trecho da questão ou do comentário antes de tocar em ⚡ para aproveitá-lo.</p>" +
+      (irmaos.length ? "<details class='fcp-irmaos'><summary>Já existem " + irmaos.length + ' flashcard(s) desta questão</summary><ul>' + irmaos.map(x => "<li><button type='button' data-fcp='editar-irmao' data-id='" + esc(x.id) + "'>" + esc(x.frente.slice(0, 90) || '(sem frente)') + '</button></li>').join('') + '</ul></details>' : '') +
+      "<div class='fcp-acoes'>" + (existente ? "<button type='button' class='fcp-perigo' data-fcp='excluir'>Excluir</button>" : '') +
+      "<span></span><button type='button' data-fcp='cancelar'>Cancelar</button><button type='button' class='fcp-principal' data-fcp='salvar'>" + (existente ? 'Salvar' : 'Criar flashcard') + '</button></div></div>';
+    document.body.append(fundo);
+    const campo = n => fundo.querySelector("[data-campo='" + n + "']");
+    setTimeout(() => campo(c.frente ? 'verso' : 'frente').focus(), 30);
+    fundo.addEventListener('click', e => {
+      if (e.target === fundo) return fechar();
+      const b = e.target.closest('[data-fcp]'); if (!b) return;
+      const a = b.dataset.fcp;
+      if (a === 'cancelar') fechar();
+      else if (a === 'sel-frente' || a === 'sel-verso') { const t = campo(a === 'sel-frente' ? 'frente' : 'verso'); t.value = (t.value ? t.value.trimEnd() + '\n' : '') + ultimaSelecao; t.focus(); }
+      else if (a === 'editar-irmao') abrirEditor(api, {id: b.dataset.id, depois});
+      else if (a === 'excluir') {
+        if (b.dataset.confirmar !== '1') { b.dataset.confirmar = '1'; b.textContent = 'Toque de novo para excluir'; return; }
+        excluir(api, c.id); fechar(); api.avisar?.('Flashcard excluído.'); depois?.();
+      } else if (a === 'salvar') {
+        c.frente = campo('frente').value.trim(); c.verso = campo('verso').value.trim(); c.area = campo('area').value;
+        if (!c.frente || !c.verso) { api.avisar?.('Preencha a frente e o verso.'); (c.frente ? campo('verso') : campo('frente')).focus(); return; }
+        gravar(api, c); fechar(); ultimaSelecao = '';
+        api.avisar?.(existente ? 'Flashcard salvo.' : 'Flashcard criado. Ele aparece na aba FLASHCARDS.');
+        atualizarBotoes(); depois?.();
+      }
+    });
+    fundo.addEventListener('keydown', e => {
+      if (e.key === 'Escape') fechar();
+      if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) fundo.querySelector("[data-fcp='salvar']").click();
+    });
+  }
+  function fechar() { document.querySelectorAll('.fcp-fundo').forEach(x => x.remove()); }
+  function atualizarBotoes() {
+    document.querySelectorAll("[data-acao='psu-flashcard']").forEach(b => { const n = contar(b.dataset.qid); b.textContent = '⚡ Criar flashcard' + (n ? ' (' + n + ')' : ''); });
+  }
+  // Guarda o último trecho selecionado dentro da tela (o toque no botão pode limpar a seleção no celular).
+  document.addEventListener('selectionchange', () => {
+    const s = window.getSelection?.(); const t = s ? String(s).trim() : '';
+    if (t && document.getElementById('tela')?.contains(s.anchorNode)) ultimaSelecao = t.slice(0, 1200);
+  });
+
+  // ---------- ABA ----------
+  function montar(tela, api, id) {
+    apiAtual = api;
+    if (id === 'estudar' && sessao) return estudar(tela, api);
+    const esc = api.esc, f = lerFiltro(api), cards = mapa(api), agora = Date.now();
+    const lista = ordenar(filtrar(api, f, cards), f.ordem);
+    const nunca = cards.filter(c => !c.rev).length, venc = cards.filter(c => c.rev && vencido(c, agora)).length;
+    const errados = cards.filter(c => c.rev?.nota === 'errei').length;
+    const fila = ordenar(cards.filter(c => vencido(c, agora)), 'novos');
+    const marcado = (g, v) => f[g].includes(v);
+    const chip = (g, v, t) => "<button type='button' class='fcp-chip" + (marcado(g, v) ? ' ativo' : '') + "' data-fc-tog='" + g + "' data-v='" + v + "' aria-pressed='" + marcado(g, v) + "'>" + esc(t) + '</button>';
+    const proxTxt = c => !c.rev ? 'nunca visto' : vencido(c, agora) ? 'para revisar agora' : 'revisar em ' + texto(c.rev.prox - agora);
+    tela.innerHTML = "<section class='intro'><span class='rotulo'>FLASHCARDS · PSU-MG</span><h1>Flashcards</h1>" +
+      '<p>Crie cartões a partir de qualquer questão (botão <strong>⚡ Criar flashcard</strong> na tela da questão) ou aqui mesmo. Ao estudar, avalie cada cartão: quanto melhor a nota, mais tempo até ele voltar.</p></section>' +
+      "<div class='indicadores'><div class='indicador'><strong>" + cards.length + "</strong><small>flashcards</small></div><div class='indicador'><strong>" + nunca +
+      "</strong><small>nunca vistos</small></div><div class='indicador'><strong>" + venc + "</strong><small>para revisar agora</small></div><div class='indicador'><strong>" + errados + '</strong><small>na nota Errei</small></div></div>' +
+      "<section class='painel fcp-topo'><button type='button' class='principal' data-fc='estudar-fila'" + (fila.length ? '' : ' disabled') + '>Estudar agora (' + fila.length + ')</button>' +
+      "<button type='button' class='secundario' data-fc='novo'>+ Novo flashcard</button>" +
+      "<p class='fcp-dica'>“Estudar agora” = nunca vistos primeiro, depois os que já deram o tempo (Errei antes de Difícil, e assim por diante).</p></section>" +
+      "<section class='painel fcp-filtros'><h2>Filtrar e escolher</h2>" +
+      "<div class='fcp-atalhos'>" + chip('notas', 'nunca', 'Nunca vistos') + chip('notas', 'errei', 'Só errados') + chip('notas', 'dificil', 'Só difíceis') +
+      "<button type='button' class='fcp-chip" + (f.vencidos ? ' ativo' : '') + "' data-fc='vencidos' aria-pressed='" + f.vencidos + "'>Só os que já deram o tempo</button></div>" +
+      "<label class='fcp-busca'>Buscar<input type='search' data-fc-busca value='" + esc(f.q) + "' placeholder='palavra da frente, do verso ou ano'></label>" +
+      "<div class='fcp-grupo'><span>Área</span>" + AREAS.map(([k, n]) => chip('areas', k, n)).join('') + '</div>' +
+      "<div class='fcp-grupo'><span>Última nota</span>" + FILTRO_NOTAS.map(([k, n]) => chip('notas', k, n)).join('') + '</div>' +
+      "<div class='fcp-linha'><label>Origem<select data-fc-sel='origem'><option value=''>Todos</option><option value='questao'" + (f.origem === 'questao' ? ' selected' : '') + ">Criados de questões</option><option value='avulso'" + (f.origem === 'avulso' ? ' selected' : '') + '>Avulsos</option></select></label>' +
+      "<label>Ordem<select data-fc-sel='ordem'>" + ORDENS.map(([k, n]) => "<option value='" + k + "'" + (k === f.ordem ? ' selected' : '') + '>' + esc(n) + '</option>').join('') + '</select></label></div>' +
+      "<div class='fcp-linha'><button type='button' class='principal' data-fc='estudar-filtro'" + (lista.length ? '' : ' disabled') + '>Estudar estes (' + lista.length + ")</button><button type='button' class='terciario' data-fc='limpar'>Limpar filtros</button></div>" +
+      "<details class='fcp-int'><summary>Intervalos de revisão</summary><label><input type='radio' name='fcmodo' value='espacado'" + (modoIntensivo(api) ? '' : ' checked') + '> <strong>Espaçado</strong> (padrão): Errei volta em 10 min; Difícil, Médio, Bom e Fácil voltam em 1, 2, 3 e 5 dias na primeira vez, e o intervalo cresce a cada nova revisão.</label>' +
+      "<label><input type='radio' name='fcmodo' value='intensivo'" + (modoIntensivo(api) ? ' checked' : '') + '> <strong>Intensivo</strong> (véspera de prova): Errei 15 min · Difícil 30 min · Médio 1 h · Bom 2 h · Fácil 3 h.</label></details></section>' +
+      "<section class='fcp-lista'>" + (!cards.length ? "<p class='vazio'>Você ainda não tem flashcards. Abra uma questão no BANCO DE QUESTÕES ou em PROVAS POR ANO e toque em <strong>⚡ Criar flashcard</strong>.</p>" :
+        !lista.length ? "<p class='vazio'>Nenhum flashcard com esses filtros.</p>" :
+        lista.map(c => "<article class='fcp-card'><div class='fcp-card-meta'><span>" + esc(AREAS.find(a => a[0] === (c.area || 'outra'))[1]) + (c.ref ? ' · ' + esc(c.ref) : ' · avulso') + "</span><span class='fcp-nota fcp-n-" + (c.rev?.nota || 'nunca') + "'>" + esc(c.rev ? NOME_NOTA[c.rev.nota] : 'Novo') + '</span></div>' +
+          "<div class='fcp-card-frente'>" + api.md(c.frente) + '</div>' +
+          "<details><summary>Ver verso</summary><div class='fcp-card-verso'>" + api.md(c.verso) + '</div></details>' +
+          "<div class='fcp-card-rodape'><small>" + esc(proxTxt(c)) + (c.rev?.erros ? ' · errou ' + c.rev.erros + 'x' : '') + '</small><span>' +
+          (c.qid ? "<button type='button' class='terciario' data-fc='questao' data-id='" + esc(c.id) + "'>Ver questão</button>" : '') +
+          "<button type='button' class='terciario' data-fc='editar' data-id='" + esc(c.id) + "'>Editar</button></span></div></article>").join('')) + '</section>';
+    const salvarFiltro = n => { api.preferencia(PREF_FILTRO, n); montar(tela, api); };
+    tela.onclick = e => {
+      const t = e.target.closest('[data-fc-tog]');
+      if (t) { const n = lerFiltro(api), g = t.dataset.fcTog, v = t.dataset.v; n[g] = n[g].includes(v) ? n[g].filter(x => x !== v) : [...n[g], v]; return salvarFiltro(n); }
+      const b = e.target.closest('[data-fc]'); if (!b) return;
+      const a = b.dataset.fc;
+      if (a === 'novo') abrirEditor(api, {depois: () => montar(tela, api)});
+      else if (a === 'editar') abrirEditor(api, {id: b.dataset.id, depois: () => montar(tela, api)});
+      else if (a === 'questao') { const c = api.ler(CAMPO, b.dataset.id); if (c?.qid) api.treinarQuestao(c.qid, 'flashcards'); }
+      else if (a === 'vencidos') { const n = lerFiltro(api); n.vencidos = !n.vencidos; salvarFiltro(n); }
+      else if (a === 'limpar') salvarFiltro(vazio());
+      else if (a === 'estudar-fila') iniciar(api, fila.map(c => c.id), 'Revisão do dia');
+      else if (a === 'estudar-filtro') iniciar(api, lista.map(c => c.id), 'Seleção filtrada');
+    };
+    tela.onchange = e => {
+      const s = e.target.closest('[data-fc-sel]');
+      if (s) { const n = lerFiltro(api); n[s.dataset.fcSel] = s.value; return salvarFiltro(n); }
+      if (e.target.name === 'fcmodo') { api.preferencia(PREF_MODO, e.target.value); api.avisar?.(e.target.value === 'intensivo' ? 'Intervalos intensivos ligados.' : 'Intervalos espaçados ligados.'); }
+    };
+    let espera = null;
+    tela.oninput = e => {
+      if (!e.target.matches('[data-fc-busca]')) return;
+      clearTimeout(espera);
+      const v = e.target.value;
+      espera = setTimeout(() => { const n = lerFiltro(api); n.q = v; api.preferencia(PREF_FILTRO, n); montar(tela, api); const i = tela.querySelector('[data-fc-busca]'); if (i) { i.focus(); i.setSelectionRange(v.length, v.length); } }, 350);
+    };
+  }
+
+  // ---------- ESTUDO ----------
+  function iniciar(api, ids, nome) {
+    if (!ids.length) return;
+    sessao = {nome, fila: [...ids], feitos: 0, total: ids.length, virado: false, notas: {}};
+    if (location.hash === '#flashcards/estudar') estudar(document.getElementById('tela'), api); else location.hash = '#flashcards/estudar';
+  }
+  function estudar(tela, api) {
+    const esc = api.esc;
+    tela.onclick = null; tela.onchange = null; tela.oninput = null;
+    let c = null;
+    while (sessao.fila.length && !(c = api.ler(CAMPO, sessao.fila[0]))) sessao.fila.shift();
+    if (!c) {
+      const resumo = NOTAS.map(([k, n]) => sessao.notas[k] ? n + ': ' + sessao.notas[k] : '').filter(Boolean).join(' · ');
+      tela.innerHTML = "<section class='intro'><span class='rotulo'>FLASHCARDS · " + esc(sessao.nome) + "</span><h1>Rodada concluída</h1><p>" + sessao.feitos + ' avaliações' + (resumo ? ' · ' + esc(resumo) : '') + '.</p></section>' +
+        "<div class='fcp-linha'><a class='principal' href='#flashcards'>Voltar aos flashcards</a></div>";
+      sessao = null; return;
+    }
+    const agora = Date.now();
+    tela.innerHTML = "<section class='fcp-estudo'><div class='fcp-estudo-topo'><a class='rota-voltar' href='#flashcards'>← Flashcards</a><span>" + esc(sessao.nome) + ' · ' + (sessao.feitos + 1) + ' de ' + (sessao.feitos + sessao.fila.length) + '</span></div>' +
+      "<div class='barra-progresso'><span style='width:" + Math.round(sessao.feitos / Math.max(1, sessao.feitos + sessao.fila.length) * 100) + "%'></span></div>" +
+      "<article class='fcp-cartao'><div class='fcp-card-meta'><span>" + esc(AREAS.find(a => a[0] === (c.area || 'outra'))[1]) + (c.ref ? ' · ' + esc(c.ref) : '') + "</span><span class='fcp-nota fcp-n-" + (c.rev?.nota || 'nunca') + "'>" + esc(c.rev ? NOME_NOTA[c.rev.nota] : 'Novo') + '</span></div>' +
+      "<div class='fcp-face'>" + api.md(c.frente) + '</div>' +
+      (sessao.virado ? "<hr><div class='fcp-face fcp-verso'>" + api.md(c.verso) + '</div>' : '') + '</article>' +
+      (!sessao.virado ? "<button type='button' class='principal fcp-virar' data-fe='virar'>Mostrar resposta <small>(espaço)</small></button>" :
+        "<div class='fcp-notas'>" + NOTAS.map(([k, n, tecla]) => "<button type='button' class='fcp-nota-b fcp-n-" + k + "' data-fe='nota' data-nota='" + k + "'><strong>" + n + '</strong><small>' + texto(intervalo(api, c, k)) + ' · ' + tecla + '</small></button>').join('') + '</div>') +
+      "<div class='fcp-linha fcp-estudo-rodape'>" + (c.qid ? "<button type='button' class='terciario' data-fe='questao'>Ver questão</button>" : '') +
+      "<button type='button' class='terciario' data-fe='editar'>Editar</button><button type='button' class='terciario' data-fe='pular'>Pular</button></div></section>";
+    tela.onclick = e => {
+      const b = e.target.closest('[data-fe]'); if (!b) return;
+      const a = b.dataset.fe;
+      if (a === 'virar') { sessao.virado = true; estudar(tela, api); }
+      else if (a === 'nota') responder(tela, api, c, b.dataset.nota);
+      else if (a === 'pular') { sessao.fila.push(sessao.fila.shift()); sessao.virado = false; estudar(tela, api); }
+      else if (a === 'editar') abrirEditor(api, {id: c.id, depois: () => estudar(tela, api)});
+      else if (a === 'questao') api.treinarQuestao(c.qid, 'flashcards');
+    };
+  }
+  function responder(tela, api, c, nota) {
+    avaliar(api, c, nota);
+    sessao.notas[nota] = (sessao.notas[nota] || 0) + 1; sessao.feitos++;
+    const id = sessao.fila.shift();
+    // Errei volta ainda nesta rodada, alguns cartões depois.
+    if (nota === 'errei') sessao.fila.splice(Math.min(3, sessao.fila.length), 0, id);
+    sessao.virado = false; estudar(tela, api); window.scrollTo({top: 0});
+  }
+  document.addEventListener('keydown', e => {
+    if (!sessao || location.hash !== '#flashcards/estudar' || document.querySelector('.fcp-fundo')) return;
+    if (/^(INPUT|TEXTAREA|SELECT)$/.test(e.target.tagName)) return;
+    const tela = document.getElementById('tela');
+    if (e.key === ' ' && !sessao.virado) { e.preventDefault(); tela.querySelector("[data-fe='virar']")?.click(); }
+    else if (sessao.virado && /^[1-5]$/.test(e.key)) tela.querySelector("[data-fe='nota'][data-nota='" + NOTAS[Number(e.key) - 1][0] + "']")?.click();
+  });
+  window.FelumaFlashcards = {montar, abrirEditor, contar, cartoes: api => mapa(api)};
+})();
+
+</script>
+  <script>
+(() => {
   "use strict";
   // Ctrl+P na lista (25/09/2026). Pedido do Jorge: "quero dar um ctrl p na lista que eu estiver fazendo e imprimir as
   // questões naquele mesmo formato, na ordem que tá". Na tela da questão (#sessao/<id>) o papel leva TODAS as questões
@@ -7266,7 +7660,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
   // Mapas fixos do progresso. Progresso gravado antes de um campo novo existir não os traz:
   // sem normalizar, a fusão entre abas apagaria o mapa recém-criado e o módulo que o lê quebra.
   // pedidosFlashcard (23/09): botão "Gerar flashcard" da questão; {qid: {quando, nota}} lido no "fechar o dia" pelo Claude.
-  const MAPAS = ["sessoes", "notas", "favoritas", "grifos", "raciocinio", "balanco", "preferencias", "flashcards", "errosUltimoDia", "pedidosFlashcard", "recuperacao", "fsrs"];   // recuperacao (23/09 noite): respostas da aba RECUPERAR
+  const MAPAS = ["sessoes", "notas", "favoritas", "grifos", "raciocinio", "balanco", "preferencias", "flashcards", "errosUltimoDia", "pedidosFlashcard", "recuperacao", "fsrs", "cartoesPsu"];   // recuperacao (23/09 noite): respostas da aba RECUPERAR
   let dados = {versao: 2, sessoes: {}, notas: {}, favoritas: {}, grifos: {}, raciocinio: {}, balanco: {}, preferencias: {}};
   let falhaArmazenamento = false, avisoCota = false;
   try {
@@ -7500,6 +7894,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
   }
   const api = {
     ler: (campo, id) => dados[campo]?.[id],
+    lerTudo: campo => dados[campo],
     ultima: qid => ultima(qid),
     treinarPlano(listaId, nome, ids, posicao = 0) {
       ids = ids.filter(id => porId?.[id]);
@@ -8183,6 +8578,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
       botao(s.sinalizadas[q.id] ? "⚑ Para revisar" : "⚐ Marcar para revisar", "sinalizar", "aria-pressed='" + !!s.sinalizadas[q.id] + "'", "terciario") +
       botao(favorita(q.id) ? "★ Favorita" : "☆ Favoritar", "favoritar", "aria-pressed='" + favorita(q.id) + "'", "terciario") +
       botao("Grifar seleção", "grifar", "", "terciario") + botao("Limpar grifos", "limpar-grifos", "", "terciario") +
+      botao("⚡ Criar flashcard" + (window.FelumaFlashcards?.contar(q.id) ? " (" + window.FelumaFlashcards.contar(q.id) + ")" : ""), "psu-flashcard", "data-qid='" + esc(q.id) + "'", "terciario") +
       // GERAR FLASHCARD (23/09): 1 clique marca a questão; à noite o Claude cruza com os baralhos e cria só o que falta.
       (!travada && s.respostas[q.id] ? botao("Limpar resposta", "limpar-resposta", "", "terciario") : "") + "</div>" +
       (dados.pedidosFlashcard?.[q.id] ? "<label class='pedido-flashcard-nota'><span>O que decorar (opcional)</span><input type='text' maxlength='1000' data-pedido-nota='" + esc(q.id) + "' value='" + esc(dados.pedidosFlashcard[q.id].nota || "") + "' placeholder='ex.: amazia x amastia'></label>" : "") +
@@ -8457,7 +8853,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
     }
   }
   // Rota -> aba do MENU FINAL que fica acesa (aria-current). O que não está aqui fica sem destaque.
-  const MENU_DA_ROTA = {assuntos:"#assuntos", inicio:"#inicio", hoje:"#inicio", provas:"#provas", "plano-claude":"#plano-claude",
+  const MENU_DA_ROTA = {flashcards:"#flashcards", assuntos:"#assuntos", inicio:"#inicio", hoje:"#inicio", provas:"#provas", "plano-claude":"#plano-claude",
     erros:"#erros", caderno:"#erros", "erros-ultimo-dia":"#erros",
     cartoes:"#cartoes", flashcards:"#cartoes", "flashcards-dia":"#cartoes",
     sabado:"#sabado", "feluma-2027":"#feluma-2027", "reta-final":"#reta-final", atlas:"#atlas", atlas3d:"#atlas", "atualizacoes-fc":"#atualizacoes-fc", desempenho:"#desempenho", previsao:"#previsao", "por-area":"#por-area", simulado:"#simulado"};
@@ -8590,7 +8986,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
     else if (rota === "assuntos" && window.PsuAssuntos) window.PsuAssuntos.montar(tela, api, id);
     else if (rota === "por-area" && window.FelumaPorArea) window.FelumaPorArea.montar(tela, api, id);
     else if (rota === "radar" && window.FelumaRadarIPM) window.FelumaRadarIPM.montar(tela, api, id);
-    else if (rota === "flashcards") window.FelumaFlashcards.montar(tela, api);
+    else if (rota === "flashcards" && window.FelumaFlashcards) window.FelumaFlashcards.montar(tela, api, id);
     else inicio(rota === "provas");
     window.scrollTo({top:0,behavior:"instant"});
   }
@@ -8724,6 +9120,7 @@ if(__exports != exports)module.exports = exports;return module.exports}));
         const st = faixa?.querySelector(".conf-rapida-status");
         if (st) { let t = ""; if (s.corrigidas?.[qid]) { try { t = window.FelumaFsrsQuestoes?.statusTexto(api, qid) || ""; } catch {} } st.textContent = novo ? (t || "Salvo") : ""; }
       }
+      else if (acao === "psu-flashcard") window.FelumaFlashcards?.abrirEditor(api, {qid: el.dataset.qid || qid});
       else if (acao === "pedir-flashcard") {
         if (!objeto(dados.pedidosFlashcard)) dados.pedidosFlashcard = {};
         if (dados.pedidosFlashcard[qid]) delete dados.pedidosFlashcard[qid];
